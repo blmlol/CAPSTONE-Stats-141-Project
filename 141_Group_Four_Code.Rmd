@@ -1,0 +1,414 @@
+---
+title: "141_FINAL_PROJECT_Group_Four"
+author: "GroupFour"
+date: "3/23/2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+# Reading the data
+```{r}
+library(readxl)
+library(dplyr)
+eye <-  read_excel("~/Desktop/2.24_renamed_data.xlsx")
+# basic statistics of the data
+dim(eye)
+length(unique(eye$Name_unique))  #233 included 
+summary(eye$Length_follow_up)
+```
+
+# Data exploration 
+## Number of people in each group
+
+# PRE_Operation
+```{r}
+
+#__________________________________________________________________________________
+#Pre MRD Symmetry
+PreMRDdiff1 <- eye %>%
+  filter(abs(PreMRDdiff)<1)
+length(unique(PreMRDdiff1$Name_unique))  #128
+
+#Pre MRD Symmetry and Pre PTB Symmetry
+PrePTB1 <- eye %>%
+  filter(abs(PreMRDdiff) <1 ) %>%
+  filter(abs(PrePTBdiff) < 3.5)
+length(unique(PrePTB1$Name_unique))  #109
+
+#Pre MRD Symmetry and Pre PTB Asymmetry
+PrePTB2 <- eye %>%
+  filter(abs(PreMRDdiff)<1) %>%
+  filter(abs(PrePTBdiff) >= 3.5)
+length(unique(PrePTB2$Name_unique))  #19
+
+
+#__________________________________________________________________________________
+#Pre MRD Asymmetry
+PreMRDdiff2 <- eye %>%
+  filter(abs(PreMRDdiff) >= 1)
+length(unique(PreMRDdiff2$Name_unique))  #105
+
+#Pre MRD Asymmetry and Pre PTB Symmetry
+PrePTB3 <- eye %>%
+  filter(abs(PreMRDdiff) >= 1) %>%
+  filter(abs(PrePTBdiff) < 3.5)
+length(unique(PrePTB3$Name_unique))  #84
+
+#Pre MRD Asymmetry and Pre PTB Asymmetry
+PrePTB4 <-  eye %>%
+  filter(abs(PreMRDdiff) >= 1) %>%
+  filter(abs(PrePTBdiff) >= 3.5 )
+length(unique(PrePTB4$Name_unique))  #21
+```
+
+
+
+
+#POST_Operation
+```{r}
+#__________________________________________________________________________________
+# PostMRD Symmetry
+PostMRDdiff1 <- eye %>%
+  filter(abs(PostMRDdiff) < 1 )
+length(unique(PostMRDdiff1$Name_unique))  #194
+
+#PostMRD Symmetry and PostPTB Symmetry
+PostPTB5 <- eye %>%
+  filter(abs(PostMRDdiff) < 1) %>%
+  filter(abs(PostPTBdiff) < 3.5) 
+length(unique(PostPTB5$Name_unique))   #170
+
+#PostMRD Symmetry and PostPTB Asymmetry
+PostPTB6 <- eye %>%
+  filter(abs(PostMRDdiff) < 1) %>%
+  filter(abs(PostPTBdiff) >= 3.5)
+length(unique(PostPTB6$Name_unique))   #24
+
+
+#__________________________________________________________________________________
+# PostMRD Asymmetry
+PostMRDdiff2  <- eye %>%
+  filter(abs(PostMRDdiff)  >= 1)
+length(unique(PostMRDdiff2$Name_unique))  #39
+
+# PostMRD Asymmetry and PostPTB Symmetry
+PostPTB7 <- eye %>%
+  filter(abs(PostMRDdiff)  >= 1) %>%
+  filter(abs(PostPTBdiff) < 3.5)
+length(unique(PostPTB7$Name_unique))  #32
+
+# PostMRD Asymmetry and PostPTB Asymmetry
+PostPTB8 <- eye %>%
+  filter(abs(PostMRDdiff) >= 1)  %>%
+  filter(abs(PostPTBdiff) >= 3.5 )
+length(unique(PostPTB8$Name_unique))   #7
+```
+
+
+
+# Recoding the variables: categorize
+```{r}
+#Symmetry:0
+#Asymmetry:1
+
+#Post PTB difference 
+dim(eye)
+eye$PostPTBdiff_c<-""
+for (i in (1:nrow(eye))){
+  if (eye$PostPTBdiff[i] > -3.5 & eye$PostPTBdiff[i] < 3.5){
+    eye$PostPTBdiff_c[i] <- 0
+  }
+  else {
+     eye$PostPTBdiff_c[i] <- 1
+  }
+}
+table(eye$PostPTBdiff_c)
+
+
+
+#Pre PTB difference 
+eye$PrePTBdiff_c<-""
+for (i in (1:nrow(eye))){
+  if (eye$PrePTBdiff[i] > -3.5 & eye$PrePTBdiff[i] < 3.5){
+    eye$PrePTBdiff_c[i] <- 0
+  }
+  else {
+     eye$PrePTBdiff_c[i] <- 1
+  }
+}
+
+table(eye$PrePTBdiff_c)
+
+
+
+
+#Pre MRD
+eye$PreMRDdiff_c<-""
+for (i in (1:nrow(eye))){
+  if (eye$PreMRDdiff[i] > -1 & eye$PreMRDdiff[i] < 1){
+    eye$PreMRDdiff_c[i] <- 0
+  }
+  else {
+     eye$PreMRDdiff_c[i] <- 1
+  }
+}
+table(eye$PreMRDdiff_c)
+table(eye$PreMRDdiff_c)
+
+
+eye$PostMRDdiff_c<-""
+for (i in (1:nrow(eye))){
+  if (eye$PostMRDdiff[i] > -1 & eye$PostMRDdiff[i] < 1){
+    eye$PostMRDdiff_c[i] <- 0
+  }
+  else {
+     eye$PostMRDdiff_c[i] <- 1
+  }
+}
+table(eye$PostMRDdiff_c);typeof(eye$PostMRDdiff_c)
+
+
+table(eye$Lateral); as.factor(eye$Lateral)
+```
+
+
+# Making symmetry as baseline, changing factor level
+```{r}
+# change to factors:
+#predict asymmetry: want to reject the Null
+eye$PostMRDdiff_c <- factor(eye$PostMRDdiff_c,levels = c(0,1),labels = c("symmetry","asymmetry"))
+eye$PreMRDdiff_c <- factor(eye$PreMRDdiff_c,levels = c(0,1),labels = c("symmetry","asymmetry"))
+eye$PostPTBdiff_c <- factor(eye$PostPTBdiff_c,levels = c(0,1),labels = c("symmetry","asymmetry"))
+eye$PrePTBdiff_c <- factor(eye$PrePTBdiff_c,levels = c(0,1),labels = c("symmetry","aymmetry"))
+table(eye$PostPTBdiff_c)
+
+
+left_indexes<-seq(2,nrow(eye),2)
+right_indexes<-seq(1,nrow(eye),2)
+left_eye <- eye[left_indexes,];  dim(left_eye)    #subset the left eye 
+right_eye <- eye[right_indexes,];  dim(right_eye)  #subset the right eye 
+
+```
+
+
+# Four spineplots
+```{r}
+library(ggmosaic)
+library(ggplot2)
+##### Post  PTB symmetry vs. Pre PTB symmetry
+ggplot(data=eye)+geom_mosaic(aes(weight=1, x=product(PostPTBdiff_c, PrePTBdiff_c), fill=factor(PrePTBdiff_c)), na.rm=TRUE)+theme_classic()+xlab("Pre PTB")+ylab("Post PTB")+
+  scale_fill_discrete(name="Post PTB Symmetry", labels=c("Asymmetry", "Symmetry"))+ggtitle("Post  PTB symmetry vs. Pre PTB symmetry")
+
+##### Post  MRD symmetry vs. Pre MRD symmetry
+ggplot(data=eye)+geom_mosaic(aes(weight=1, x=product(PostMRDdiff_c, PreMRDdiff_c), fill=factor(PreMRDdiff_c)), na.rm=TRUE)+theme_classic()+xlab("Pre MRD")+
+  ylab("Post MRD")+scale_fill_discrete(name="Post MRD Symmetry", labels=c("Asymmetry", "Symmetry"))+ggtitle("Post  MRD symmetry vs. Pre MRD symmetry")
+
+##### Post  PTB symmetry vs. Pre MRD symmetry
+ggplot(data=eye)+geom_mosaic(aes(weight=1, x=product(PostPTBdiff_c, PreMRDdiff_c), fill=factor(PreMRDdiff_c)), na.rm=TRUE)+theme_classic()+xlab("Pre MRD")+
+  ylab("Post PTB")+scale_fill_discrete(name="Post PTB Symmetry", labels=c("Asymmetry", "Symmetry"))+ggtitle("Post  PTB symmetry vs. Pre MRD symmetry")
+
+##### Post PTB symmetry vs. Post MRD symmetry
+ggplot(data=eye)+geom_mosaic(aes(weight=1, x=product(PostMRDdiff_c, PostPTBdiff_c), fill=factor(PostPTBdiff_c)), na.rm=TRUE)+
+  theme_classic()+xlab("Post MRD")+ylab("Post PTB")+scale_fill_discrete(name="Post MRD Symmetry", labels=c("Asymmetry", "Symmetry"))+ggtitle("Post PTB symmetry vs. Post MRD symmetry")
+```
+
+# Logistic regression
+```{r}
+#note: we are using "right-eye" data: (right-left)
+#Use the unique rows
+cor.test(eye$PreMRDdiff,eye$PostMRDdiff)
+
+##### Full model 
+logm1 <- glm(PostPTBdiff_c~Age+Lateral+Gender+PrePTBdiff_c+PreMRDdiff_c+PostMRDdiff_c+PreMRDdiff_c*PostMRDdiff_c,family="binomial",data = right_eye)
+summary(logm1)
+
+##### Odds ratio
+round(exp(cbind(Estimate=coef(logm1),confint(logm1))),2)
+
+##### Interation effect
+interaction.plot(right_eye$PreMRDdiff_c,right_eye$PostMRDdiff_c,right_eye$PostMRDdiff,main= "Interaction effect for Pre MRD_diff and Post MRD_diff") # The interaction effect is not significant. 
+library(effects)
+plot(allEffects(logm1),ask=FALSE)
+
+
+##### Reduced model
+logm2 <- glm(PostPTBdiff_c~Age+PrePTBdiff_c+PreMRDdiff_c+PostMRDdiff_c,
+         family="binomial",data = right_eye)
+summary(logm2)
+round(exp(cbind(Estimate=coef(logm2),confint(logm2))),2)
+
+##### Deviance for logistic regression:
+#logm1_Full
+R2_devianceFull <- 1 - 134.51/182.45 
+R2_devianceFull    #0.2627569
+
+#logn2_Reduced
+R2_devianceReduced <- 1 - 135.64/182.74
+R2_devianceReduced  #0.2577432
+
+##### Confusion Matrix:
+library(nnet)
+mlogm <- multinom(PostPTBdiff_c~Age+PrePTBdiff_c+PostMRDdiff_c+PreMRDdiff_c,data=right_eye)
+summary(mlogm)
+p <- predict(mlogm,right_eye)
+tab <- table(p, right_eye$PostPTBdiff_c)
+tab
+(10+193)/233
+
+
+##### Pearson goodness of fit of logistic regression:
+#calculate person chi-square for full model
+print(paste("Pearsons X^2=",round(sum(residuals(logm1,type="pearson")^2),3)))
+#critical value 
+qchisq(0.95,224)    #df=n-p-1=233-8-1=224
+233.325 < 259.9144 
+#less than critical value
+#fail to reject the null, conclude the logistic model fits the data
+
+#drop insignificant variables:
+#calculate person chi-square for reduced model:
+print(paste("Pearsons X^2=",round(sum(residuals(logm2,type="pearson")^2),3)))
+#critical value 
+qchisq(0.95,228)     #df=n-p-1=233-4-1=228
+217.329 < 264.224  
+#less than critical value
+#fail to reject the null, conclude the logistic model fits the data
+```
+
+# Logistic regression with Cross Validation
+```{r}
+set.seed(141)
+library(pROC)
+library(ROCR)
+dim(right_eye)
+
+#split data into training[80%] and testing[20%]  
+training <- right_eye[sample(233*0.8),]
+testing <- right_eye[sample(233*0.2),]
+
+##### training 
+model <- glm(PostPTBdiff_c~Age+PrePTBdiff_c+PreMRDdiff_c+PostMRDdiff_c,
+         family="binomial",data = training)
+summary(model)
+anova(model,test = "Chisq")
+#odds ratio
+round(exp(cbind(Estimate=coef(model),confint(model))),2)
+
+library(pscl)
+pR2(model)
+##### testing
+fitted.results <- predict(model,newdata = subset(testing,select=c(4,26,27,28)),type="response")
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+testing$PostPTBdiff_c <- as.factor(testing$PostPTBdiff_c)
+levels(testing$PostPTBdiff_c) <- c(0,1)
+table(fitted.results,testing$PostPTBdiff_c )
+(36+3)/(36+3+2+5)  #Accuracy: 0.8478261
+
+
+p <- predict(model,newdata = subset(testing,select=c(4,26,27,28)),type="response")
+pr <- prediction(p,testing$PostPTBdiff_c)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+
+##### ROC curve
+plot(prf,lwd=3,colorize=TRUE,main="Receiver Operating Characteristic (ROC) curve")
+lines(x=c(0,1),y=c(0,1),col="black",lwd=2)
+polygon(x=c(0,1), y=c(0,0), col="gray")
+
+prf@x.values
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc  # 0.8092105
+```
+
+
+
+# Multiple Linear Regression Model:
+```{r}
+# Use the post-operation PTB difference as the response variable: (Test eye-brows)
+
+##### check assumptions:
+shapiro.test(right_eye$Age)
+attach(right_eye)
+round(cor(cbind(PostPTBdiff,Age,PrePTBdiff,PreMRDdiff_c,PostMRDdiff_c)),2)
+#scatterplot:
+pairs(~PostPTBdiff+Age+PrePTBdiff+PreMRDdiff_c+PostMRDdiff_c)
+
+##### full model
+m1 <- lm(PostPTBdiff~Age+PrePTBdiff+PreMRDdiff+PostMRDdiff+Lateral+Gender,data = right_eye)
+summary(m1)
+anova(m1)
+
+
+##### reduced model
+m2 <- lm(PostPTBdiff~Age+PrePTBdiff+PreMRDdiff+PostMRDdiff+Length_follow_up,data = right_eye)
+summary(m2)
+anova(m2)
+library(car)
+# vif(m2)
+par(mfrow=c(2,2))
+plot(m2)
+
+##### Compare two models
+library(stargazer)
+library(car)
+stargazer(logm1,logm2,m1,m2,type="text")
+          # dep.dep.var.labels = c("PostPTBdiff_c (categorical)","PostPTBdiff(numerical)"),
+          # out="modelsCompare.txt")
+```
+
+# Model Comparison
+```{r}
+#table to compare
+library(stargazer)
+library(car)
+stargazer(logm1,logm2,m1,m2,type="text")
+          # dep.dep.var.labels = c("PostPTBdiff_c (categorical)","PostPTBdiff(numerical)"),
+          # out="modelsCompare.txt")
+```
+
+#Add one more logistic regression [changer as the y variable]
+```{r}
+##### create changer variable
+#changer: success after the surgery (1,0)
+changer <- abs(as.numeric(right_eye$PrePTBdiff_c) - as.numeric(right_eye$PostPTBdiff_c))
+table(changer)
+right_eye <- cbind(right_eye,changer)
+
+
+##### logistic regression
+logm3 <- glm(changer ~Age+PrePTBdiff_c+PreMRDdiff_c, family="binomial",data = right_eye)
+summary(logm3)
+
+##### odds ratio
+round(exp(cbind(Estimate=coef(logm3),confint(logm3))),2)
+
+#If the patients are brow asymmtery before the surgery, they are 16.54 times more likely to be brow symmtery after surgery(is a changer)
+```
+
+
+# Random Forest
+```{r}
+set.seed(1)
+##### Split the training and testing (0.8 and 0.2)
+training <- right_eye[sample(233,187),]
+testing <- right_eye[-sample(233,187),]
+training <- training[,c(1,7:9,25)]
+testing <- testing[,c(1,7:9,25)]
+library("randomForest")
+##### Develop a predictive model
+##### vimp plot
+fit <- randomForest(as.factor(PostPTBdiff_c) ~ PreMRD1 + PrePTB + PostMRD,
+                    data=training,
+                    importance=TRUE,
+                    ntree=2000)
+Prediction <- predict(fit, testing) 
+varImpPlot(fit, type=2)
+importance(fit)
+##### Accuracy rate and confusion matrix
+table(Prediction,testing$PostPTBdiff_c)
+```
+
+
+
+
+
